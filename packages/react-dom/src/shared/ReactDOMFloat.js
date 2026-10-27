@@ -32,7 +32,7 @@ export function prefetchDNS(href: string) {
     } else if (arguments.length > 1) {
       const options = arguments[1];
       if (
-        options != null &&
+        options !== null &&
         typeof options === 'object' &&
         hasOwnProperty.call(options, 'crossOrigin')
       ) {
