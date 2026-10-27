@@ -349,4 +349,59 @@ describe('ReactIdentity', () => {
         ' This value must be coerced to a string before using it here.',
     ]);
   });
+
+  it('should use a tagged key without reading its constructor', () => {
+    const coercionError = new TypeError('cannot coerce tagged key');
+    const constructorGetter = jest.fn(() => {
+      throw new Error('constructor accessed');
+    });
+    const key = {
+      [Symbol.toStringTag]: 'TaggedKey',
+      get constructor() {
+        return constructorGetter();
+      },
+      valueOf() {
+        throw coercionError;
+      },
+    };
+
+    let thrown;
+    try {
+      React.createElement('span', {key});
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBe(coercionError);
+    expect(constructorGetter).not.toHaveBeenCalled();
+    assertConsoleErrorDev([
+      'The provided key is an unsupported type TaggedKey.' +
+        ' This value must be coerced to a string before using it here.',
+    ]);
+  });
+
+  it.each([undefined, null])(
+    'should fall back to Object for a key with constructor %s and an empty tag',
+    constructor => {
+      const coercionError = new TypeError('cannot coerce key');
+      const key = {
+        constructor,
+        [Symbol.toStringTag]: '',
+        valueOf() {
+          throw coercionError;
+        },
+      };
+
+      let thrown;
+      try {
+        React.createElement('span', {key});
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBe(coercionError);
+      assertConsoleErrorDev([
+        'The provided key is an unsupported type Object.' +
+          ' This value must be coerced to a string before using it here.',
+      ]);
+    },
+  );
 });
